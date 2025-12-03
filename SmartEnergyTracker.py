@@ -1,10 +1,6 @@
 """
 Smart Energy Usage Tracker - Interactive Real-Time GUI
-Features:
-- Perangkat dengan tombol ON/OFF per baris
-- Timer berjalan real-time
-- Undo, Remove, Export CSV
-- UI Biru Modern (tanpa mengubah fitur)
+
 """
 
 import tkinter as tk
@@ -12,7 +8,7 @@ from tkinter import ttk, messagebox, filedialog
 import time
 
 # -----------------------
-# Device & Manager1
+# Device & Manager
 # -----------------------
 class Device:
     def __init__(self, name, watt):
@@ -60,11 +56,8 @@ class ElectricityManager:
         self.undo_stack.append(("add", device))
 
     def remove_device(self, device):
-        if device in self.devices:
-            self.devices.remove(device)
-            self.undo_stack.append(("remove", device))
-            return True
-        return False
+        # fitur hapus dinonaktifkan → tetap ada tapi tidak dipakai
+        pass
 
     def undo(self):
         if not self.undo_stack:
@@ -91,7 +84,6 @@ class DeviceRow:
     def __init__(self, parent, device, update_callback, remove_callback):
         self.device = device
         self.update_callback = update_callback
-        self.remove_callback = remove_callback
 
         self.frame = ttk.Frame(parent)
         self.frame.pack(fill="x", pady=3)
@@ -113,26 +105,15 @@ class DeviceRow:
         self.toggle_btn = ttk.Button(self.frame, text="Toggle", command=self.toggle)
         self.toggle_btn.pack(side="left", padx=5)
 
-        self.remove_btn = ttk.Button(self.frame, text="Hapus", command=self.remove)
-        self.remove_btn.pack(side="left", padx=5)
+        # ❌ Tombol HAPUS sengaja DIHILANGKAN sepenuhnya
 
     def toggle(self):
         self.device.toggle()
         self.update_callback()
 
-    def remove(self):
-        if messagebox.askyesno("Konfirmasi", f"Hapus perangkat {self.device.name}?"):
-            self.device.stop()
-            self.frame.destroy()
-            self.remove_callback(self.device)
-
     def update_display(self):
         # warna status
-        if self.device.status == "ON":
-            color = "#008000"  # hijau
-        else:
-            color = "#b00020"  # merah
-
+        color = "#008000" if self.device.status == "ON" else "#b00020"
         self.status_label.config(text=self.device.status, foreground=color)
 
         # update timer
@@ -154,7 +135,7 @@ class App:
         self.device_rows = []
 
         # ---------------------------------
-        # 🎨 THEME BIRU MODERN
+        # 🎨 THEME BIRU MODERN (TIDAK DIUBAH)
         # ---------------------------------
         style = ttk.Style()
         style.theme_use("default")
@@ -213,13 +194,10 @@ class App:
         self.tarif_var = tk.StringVar(value="1500")
         ttk.Entry(bottom_frame, textvariable=self.tarif_var, width=10).pack(side="left", padx=5)
 
-        # ---------------------------------
-        # LOOP UPDATE
-        # ---------------------------------
         self.update_loop()
 
     # -----------------------
-    # Add / Undo / Remove
+    # Add / Undo
     # -----------------------
     def add_device(self):
         name = self.name_var.get().strip()
@@ -227,6 +205,7 @@ class App:
         if not name or not watt_s:
             messagebox.showwarning("Input Tidak Lengkap", "Isi nama dan daya perangkat!")
             return
+
         try:
             watt = float(watt_s)
             if watt <= 0:
@@ -238,7 +217,7 @@ class App:
         device = Device(name, watt)
         self.manager.add_device(device)
 
-        row = DeviceRow(self.list_frame, device, self.update_summary, self.remove_device)
+        row = DeviceRow(self.list_frame, device, self.update_summary, None)
         self.device_rows.append(row)
 
         self.name_var.set("")
@@ -256,14 +235,9 @@ class App:
 
         self.device_rows = []
         for device in self.manager.devices:
-            row = DeviceRow(self.list_frame, device, self.update_summary, self.remove_device)
+            row = DeviceRow(self.list_frame, device, self.update_summary, None)
             self.device_rows.append(row)
 
-        self.update_summary()
-
-    def remove_device(self, device):
-        self.manager.remove_device(device)
-        self.device_rows = [row for row in self.device_rows if row.device != device]
         self.update_summary()
 
     # -----------------------
@@ -305,7 +279,6 @@ class App:
             messagebox.showinfo("Export Berhasil", f"Laporan tersimpan: {fname}")
         except Exception as e:
             messagebox.showerror("Export Gagal", str(e))
-
 
 # -----------------------
 # Run App
