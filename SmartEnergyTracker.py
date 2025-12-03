@@ -12,7 +12,7 @@ from tkinter import ttk, messagebox, filedialog
 import time
 
 # -----------------------
-# Device & Manager
+# Device & Manager1
 # -----------------------
 class Device:
     def __init__(self, name, watt):
